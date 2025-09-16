@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Sholat Real-time dengan Notifikasi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        islamic: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e'
+                        }
+                    },
+                    animation: {
+                        'slide-in-right': 'slide-in-right 0.3s ease-out',
+                        'slide-out-right': 'slide-out-right 0.3s ease-in',
+                        'bounce-gentle': 'bounce-gentle 2s infinite'
+                    },
+                    keyframes: {
+                        'slide-in-right': {
+                            '0%': { transform: 'translateX(100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' }
+                        },
+                        'slide-out-right': {
+                            '0%': { transform: 'translateX(0)', opacity: '1' },
+                            '100%': { transform: 'translateX(100%)', opacity: '0' }
+                        },
+                        'bounce-gentle': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-islamic-50 to-blue-100 min-h-screen">
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2">
+        <!-- Toasts will be dynamically added here -->
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
+        <div class="bg-white rounded-lg p-8 text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-islamic-600 mx-auto mb-4"></div>
+            <p class="text-gray-600">Memuat jadwal sholat...</p>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header with Real-time Clock -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 bg-islamic-600 rounded-full mb-4">
+                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+                </svg>
+            </div>
+            <h1 class="text-4xl font-bold text-islamic-800 mb-2">Jadwal Sholat Real-time</h1>
+            
+            <!-- Real-time Digital Clock -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-4 border border-islamic-100">
+                <div class="text-5xl font-mono font-bold text-islamic-700 mb-2" id="digitalClock">00:00:00</div>
+                <div class="text-lg text-gray-600" id="currentDate"></div>
+                <div class="text-sm text-islamic-600 mt-2 flex items-center justify-center">
+                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></span>
+                    Live Update
+                    <span class="ml-4 text-xs bg-islamic-100 px-2 py-1 rounded-full">
+                        🔔 Notifikasi Aktif
+                    </span>
+                </div>
+            </div>
+            
+            <p class="text-lg font-semibold text-islamic-700" id="currentLocation">Jakarta, Indonesia</p>
+            <p class="text-sm text-gray-500">Data dari MyQuran API</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <strong>Error:</strong> <span id="errorText"></span>
+        </div>
+
+        <!-- Current Prayer Status with Countdown -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-islamic-100">
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-islamic-800 mb-2">Sholat Selanjutnya</h2>
+                <div class="text-4xl font-bold text-islamic-600 mb-2" id="nextPrayer">-</div>
+                <div class="text-2xl text-islamic-500 mb-4" id="nextPrayerTime">--:--:--</div>
+                <div class="bg-islamic-50 rounded-lg p-4">
+                    <div class="text-lg text-islamic-600 mb-2">
+                        <span id="timeRemaining">Memuat...</span>
+                    </div>
+                    <div class="text-3xl font-mono font-bold text-islamic-700" id="countdownTimer">--:--:--</div>
+                    <div class="mt-2">
+                        <span class="text-xs text-gray-500" id="notificationStatus">Notifikasi akan muncul 10 menit sebelum waktu sholat</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prayer Times Grid with Real-time Status -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8" id="prayerGrid">
+            <!-- Prayer cards will be populated by JavaScript -->
+        </div>
+
+        <!-- Location Selector -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Pilih Lokasi</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <select id="citySelect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-islamic-500 focus:border-transparent cursor-pointer">
+                    <option value="1107">Kota Tangerang</option>
+                    <option value="1301">Jakarta</option>
+                    <option value="1273">Surabaya</option>
+                    <option value="1204">Bandung</option>
+                    <option value="1214">Medan</option>
+                    <option value="1226">Semarang</option>
+                    <option value="1271">Makassar</option>
+                    <option value="1219">Palembang</option>
+                    <option value="1205">Yogyakarta</option>
+                    <option value="1275">Denpasar</option>
+                    <option value="1265">Balikpapan</option>
+                </select>
+                <button onclick="updateLocation()" class="bg-islamic-600 hover:bg-islamic-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-300">
+                    Update Lokasi
+                </button>
+            </div>
+        </div>
+
+        <!-- Notification Settings -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Pengaturan Notifikasi</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-700">Notifikasi 10 menit sebelum</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="notification10min" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-islamic-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-islamic-600"></div>
+                    </label>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-700">Notifikasi saat waktu tiba</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="notificationNow" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-islamic-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-islamic-600"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Islamic Calendar & Additional Info -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Kalender Hijriah</h3>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-islamic-600 mb-2" id="hijriDate">-</div>
+                    <div class="text-gray-600" id="hijriMonth">Memuat...</div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Informasi Tambahan</h3>
+                <div class="space-y-2">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Terbit:</span>
+                        <span class="font-mono font-semibold" id="sunrise">--:--:--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Dhuha:</span>
+                        <span class="font-mono font-semibold" id="dhuha">--:--:--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Tengah Malam:</span>
+                        <span class="font-mono font-semibold" id="midnight">--:--:--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Last Update:</span>
+                        <span class="font-mono text-sm text-green-600" id="lastUpdate">--:--:--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // City mapping for MyQuran API
+        const cityNames = {
+            '1101': 'Kab.Lebak, Banten',
+            '1102': 'Kab.Pandeglang,Banten',
+            '1103': 'Kab.Serang, Banten',
+            '1104': 'Kab.Tangerang, Banten',
+            '1105': 'Kota Cilegon, Banten',
+            '1106': 'Kota Serang, Banten',
+            '1107': 'Kota Tangerang, Banten',
+            '1108': 'Kota Tangerang Selatan, Banten',
+            '1203': 'Kab.Bekasi, Jawa Barat',
+            '1204': 'Bandung, Jawa Barat',
+            '1205': 'Yogyakarta, DIY',
+            '1301': 'Jakarta, Indonesia',
+            '1273': 'Surabaya, Jawa Timur',
+            '1204': 'Bandung, Jawa Barat',
+            '1214': 'Medan, Sumatera Utara',
+            '1226': 'Semarang, Jawa Tengah',
+            '1271': 'Makassar, Sulawesi Selatan',
+            '1219': 'Palembang, Sumatera Selatan',
+            '1205': 'Yogyakarta, DIY',
+            '1275': 'Denpasar, Bali',
+            '1265': 'Balikpapan, Kalimantan Timur'
+        };
+
+        let currentCityId = '1301'; // Default Jakarta
+        let currentPrayerData = null;
+        let realTimeInterval = null;
+        let dataUpdateInterval = null;
+        let notificationHistory = new Set(); // Track sent notifications
+
+        // Prayer time labels and colors
+        const prayerConfig = {
+            // imsak: { name: 'Imsak', desc: 'Sahur', color: 'green', icon: '🌙' },
+            subuh: { name: 'Subuh', desc: 'Fajar', color: 'red', icon: '🌅' },
+            dzuhur: { name: 'Dzuhur', desc: 'Tengah Hari', color: 'yellow', icon: '☀️' },
+            ashar: { name: 'Ashar', desc: 'Sore', color: 'orange', icon: '🌇' },
+            maghrib: { name: 'Maghrib', desc: 'Senja', color: 'purple', icon: '🌆' },
+            isya: { name: 'Isya', desc: 'Malam', color: 'blue', icon: '🌃' }
+        };
+
+        // Toast Notification System
+        function createToast(type, title, message, duration = 5000) {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            
+            const typeStyles = {
+                success: 'bg-green-500 border-green-600',
+                warning: 'bg-yellow-500 border-yellow-600',
+                info: 'bg-blue-500 border-blue-600',
+                prayer: 'bg-islamic-600 border-islamic-700'
+            };
+
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = `${typeStyles[type]} text-white px-6 py-4 rounded-lg shadow-lg border-l-4 animate-slide-in-right max-w-sm`;
+            
+            toast.innerHTML = `
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="font-bold text-sm mb-1">${title}</div>
+                        <div class="text-sm opacity-90">${message}</div>
+                    </div>
+                    <button onclick="removeToast('${toastId}')" class="ml-4 text-white hover:text-gray-200 font-bold text-lg leading-none">
+                        ×
+                    </button>
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto remove after duration
+            setTimeout(() => {
+                removeToast(toastId);
+            }, duration);
+            
+            return toastId;
+        }
+
+        function removeToast(toastId) {
+            const toast = document.getElementById(toastId);
+            if (toast) {
+                toast.classList.remove('animate-slide-in-right');
+                toast.classList.add('animate-slide-out-right');
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }
+        }
+
+        // Real-time Clock Functions
+        function updateDigitalClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('id-ID', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('digitalClock').textContent = timeString;
+        }
+
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', options);
+        }
+
+        function formatTimeWithSeconds(timeString) {
+            if (!timeString || timeString === '--:--') return '--:--:--';
+            return timeString + ':00'; // Add seconds
+        }
+
+        // Notification Functions
+        function checkPrayerNotifications(jadwal) {
+            const now = new Date();
+            const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+            
+            const notification10minEnabled = document.getElementById('notification10min').checked;
+            const notificationNowEnabled = document.getElementById('notificationNow').checked;
+
+            Object.entries(prayerConfig).forEach(([key, config]) => {
+                const prayerTime = jadwal[key];
+                if (!prayerTime || prayerTime === '--:--') return;
+                
+                const [hours, minutes] = prayerTime.split(':').map(Number);
+                const prayerTimeInMinutes = hours * 60 + minutes;
+                
+                // 10 minutes before notification
+                const tenMinutesBefore = prayerTimeInMinutes - 10;
+                const notificationKey10 = `${key}-10min-${prayerTime}`;
+                
+                if (notification10minEnabled && 
+                    currentTimeInMinutes >= tenMinutesBefore && 
+                    currentTimeInMinutes < tenMinutesBefore + 1 &&
+                    !notificationHistory.has(notificationKey10)) {
+                    
+                    createToast('warning', 
+                        `${config.icon} Persiapan Sholat ${config.name}`, 
+                        `Waktu sholat ${config.name} dalam 10 menit (${prayerTime})`, 
+                        8000
+                    );
+                    notificationHistory.add(notificationKey10);
+                }
+                
+                // Exact time notification
+                const notificationKeyNow = `${key}-now-${prayerTime}`;
+                
+                if (notificationNowEnabled && 
+                    currentTimeInMinutes >= prayerTimeInMinutes && 
+                    currentTimeInMinutes < prayerTimeInMinutes + 1 &&
+                    !notificationHistory.has(notificationKeyNow)) {
+                    
+                    createToast('prayer', 
+                        `${config.icon} Waktu Sholat ${config.name}`, 
+                        `Saatnya melaksanakan sholat ${config.name}. Waktu: ${prayerTime}`, 
+                        10000
+                    );
+                    notificationHistory.add(notificationKeyNow);
+                }
+            });
+        }
+
+        // API Functions
+        async function fetchPrayerTimes(cityId) {
+            try {
+                showLoading(true);
+                hideError();
+                
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                
+                const response = await fetch(`https://api.myquran.com/v2/sholat/jadwal/${cityId}/${year}/${month}/${day}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.status !== true) {
+                    throw new Error('API returned error status');
+                }
+                
+                // Update last update time
+                const now = new Date();
+                document.getElementById('lastUpdate').textContent = now.toLocaleTimeString('id-ID', { 
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                createToast('success', '✅ Data Berhasil Dimuat', 'Jadwal sholat telah diperbarui', 3000);
+                
+                return data.data;
+            } catch (error) {
+                console.error('Error fetching prayer times:', error);
+                showError('Gagal memuat data jadwal sholat. Menggunakan data fallback.');
+                createToast('warning', '⚠️ Koneksi Bermasalah', 'Menggunakan data fallback', 4000);
+                return null;
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // UI Functions
+        function showLoading(show) {
+            const overlay = document.getElementById('loadingOverlay');
+            overlay.style.display = show ? 'flex' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+
+        function hideError() {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.classList.add('hidden');
+        }
+
+        function renderPrayerCards(jadwal) {
+            const grid = document.getElementById('prayerGrid');
+            grid.innerHTML = '';
+
+            Object.entries(prayerConfig).forEach(([key, config]) => {
+                const time = jadwal[key] || '--:--';
+                const timeWithSeconds = formatTimeWithSeconds(time);
+                const isCurrentPrayer = isCurrentlyPrayerTime(time);
+                const isUpcoming = isUpcomingPrayer(time);
+                
+                const card = document.createElement('div');
+                card.className = `prayer-card bg-white rounded-xl shadow-lg p-6 border-l-4 border-${config.color}-400 hover:shadow-xl transition-all duration-300 ${isCurrentPrayer ? 'ring-2 ring-' + config.color + '-400 bg-' + config.color + '-50 animate-bounce-gentle' : ''} ${isUpcoming ? 'ring-1 ring-' + config.color + '-300' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                                ${config.icon} ${config.name}
+                                ${isCurrentPrayer ? '<span class="ml-2 w-2 h-2 bg-' + config.color + '-500 rounded-full animate-pulse"></span>' : ''}
+                                ${isUpcoming ? '<span class="ml-2 text-xs bg-' + config.color + '-100 text-' + config.color + '-600 px-2 py-1 rounded-full">Selanjutnya</span>' : ''}
+                            </h3>
+                            <p class="text-gray-600">${config.desc}</p>
+                            ${isCurrentPrayer ? '<p class="text-xs text-' + config.color + '-600 font-semibold mt-1">⏰ WAKTU SHOLAT</p>' : ''}
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-mono font-bold text-${config.color}-600">${timeWithSeconds}</div>
+                            <div class="text-sm text-gray-500">WIB</div>
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function isCurrentlyPrayerTime(prayerTime) {
+            if (!prayerTime || prayerTime === '--:--') return false;
+            
+            const now = new Date();
+            const [hours, minutes] = prayerTime.split(':').map(Number);
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            
+            // Check if current time is within 30 minutes after prayer time
+            const prayerTimeInMinutes = hours * 60 + minutes;
+            const currentTimeInMinutes = currentHour * 60 + currentMinute;
+            
+            return currentTimeInMinutes >= prayerTimeInMinutes && 
+                   currentTimeInMinutes <= prayerTimeInMinutes + 30;
+        }
+
+        function isUpcomingPrayer(prayerTime) {
+            if (!prayerTime || prayerTime === '--:--') return false;
+            
+            const now = new Date();
+            const [hours, minutes] = prayerTime.split(':').map(Number);
+            const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+            const prayerTimeInMinutes = hours * 60 + minutes;
+            
+            // Check if prayer is within next 15 minutes
+            return prayerTimeInMinutes > currentTimeInMinutes && 
+                   prayerTimeInMinutes <= currentTimeInMinutes + 15;
+        }
+
+        function findNextPrayer(jadwal) {
+            const now = new Date();
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            
+            const prayers = Object.entries(prayerConfig).map(([key, config]) => ({
+                key,
+                name: config.name,
+                time: jadwal[key],
+                icon: config.icon
+            }));
+
+            for (let prayer of prayers) {
+                if (!prayer.time || prayer.time === '--:--') continue;
+                
+                const [hours, minutes] = prayer.time.split(':').map(Number);
+                const prayerTime = hours * 60 + minutes;
+                
+                if (prayerTime > currentTime) {
+                    const timeDiff = prayerTime - currentTime;
+                    const hoursLeft = Math.floor(timeDiff / 60);
+                    const minutesLeft = timeDiff % 60;
+                    
+                    document.getElementById('nextPrayer').textContent = `${prayer.icon} ${prayer.name}`;
+                    document.getElementById('nextPrayerTime').textContent = formatTimeWithSeconds(prayer.time);
+                    document.getElementById('timeRemaining').textContent = 
+                        `${hoursLeft} jam ${minutesLeft} menit lagi`;
+                    
+                    // Update countdown timer
+                    updateCountdownTimer(prayerTime);
+                    
+                    // Update notification status
+                    if (timeDiff <= 10) {
+                        document.getElementById('notificationStatus').textContent = 
+                            `⚠️ Notifikasi akan segera muncul (${minutesLeft} menit lagi)`;
+                    } else {
+                        document.getElementById('notificationStatus').textContent = 
+                            'Notifikasi akan muncul 10 menit sebelum waktu sholat';
+                    }
+                    
+                    return;
+                }
+            }
+            
+            // If no prayer found today, show tomorrow's first prayer
+            document.getElementById('nextPrayer').textContent = `${prayerConfig.subuh.icon} Subuh`;
+            document.getElementById('nextPrayerTime').textContent = formatTimeWithSeconds(jadwal.subuh || '--:--');
+            document.getElementById('timeRemaining').textContent = 'Besok';
+            document.getElementById('countdownTimer').textContent = '--:--:--';
+            document.getElementById('notificationStatus').textContent = 'Menunggu hari berikutnya';
+        }
+
+        function updateCountdownTimer(nextPrayerTimeInMinutes) {
+            const now = new Date();
+            const currentTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+            const currentSeconds = now.getSeconds();
+            
+            const totalSecondsLeft = (nextPrayerTimeInMinutes - currentTimeInMinutes) * 60 - currentSeconds;
+            
+            if (totalSecondsLeft <= 0) {
+                document.getElementById('countdownTimer').textContent = '00:00:00';
+                return;
+            }
+            
+            const hoursLeft = Math.floor(totalSecondsLeft / 3600);
+            const minutesLeft = Math.floor((totalSecondsLeft % 3600) / 60);
+            const secondsLeft = totalSecondsLeft % 60;
+            
+            const countdownString = `${String(hoursLeft).padStart(2, '0')}:${String(minutesLeft).padStart(2, '0')}:${String(secondsLeft).padStart(2, '0')}`;
+            document.getElementById('countdownTimer').textContent = countdownString;
+        }
+
+        function updateAdditionalInfo(jadwal) {
+            document.getElementById('sunrise').textContent = formatTimeWithSeconds(jadwal.terbit || '--:--');
+            document.getElementById('dhuha').textContent = formatTimeWithSeconds(jadwal.dhuha || '--:--');
+            document.getElementById('midnight').textContent = formatTimeWithSeconds(jadwal.tengah_malam || '--:--');
+        }
+
+        // function updateHijriDate(data) {
+        //     if (data && data.jadwal && data.jadwal.tanggal) {
+        //         const hijriDate = data.jadwal.tanggal;
+        //         document.getElementById('hijriDate').textContent = hijriDate;
+        //         document.getElementById('hijriMonth').textContent = 'Kalender Hijriah';
+        //     }
+        // }
+        async function getHijrDate(data){
+            try{
+                const response = await fetch("https://api.myquran.com/v2/cal/hijr/?adj=-1");
+                const result = await response.json();
+
+                if(result.status && result.data){
+                    const hijriDate = result.data.date[1];
+                    document.getElementById('hijriDate').textContent = hijriDate;
+                    document.getElementById('hijriMonth').textContent = 'Kalender Hijriah';
+                }
+
+                
+            }catch (error){
+                console.error("Gagal ambil data hijriah:", error);
+            }
+
+            
+        }
+
+        async function updateLocation() {
+            const select = document.getElementById('citySelect');
+            currentCityId = select.value;
+            document.getElementById('currentLocation').textContent = cityNames[currentCityId];
+            
+            // Clear notification history when changing location
+            notificationHistory.clear();
+            
+            await loadPrayerData();
+        }
+
+        async function loadPrayerData() {
+            const data = await fetchPrayerTimes(currentCityId);
+            
+            if (data && data.jadwal) {
+                currentPrayerData = data.jadwal;
+                renderPrayerCards(data.jadwal);
+                findNextPrayer(data.jadwal);
+                updateAdditionalInfo(data.jadwal);
+                // updateHijriDate(data);
+                getHijrDate(data);
+            } else {
+                // Show fallback data
+                const fallbackData = {
+                    imsak: '04:35',
+                    subuh: '04:45',
+                    dzuhur: '12:15',
+                    ashar: '15:30',
+                    maghrib: '18:05',
+                    isya: '19:25',
+                    terbit: '06:00',
+                    dhuha: '06:30',
+                    tengah_malam: '00:15'
+                };
+                
+                currentPrayerData = fallbackData;
+                renderPrayerCards(fallbackData);
+                findNextPrayer(fallbackData);
+                updateAdditionalInfo(fallbackData);
+                document.getElementById('hijriDate').textContent = 'Data Fallback';
+                document.getElementById('hijriMonth').textContent = 'Silakan coba lagi';
+            }
+        }
+
+        function startRealTimeUpdates() {
+            // Update clock every second
+            realTimeInterval = setInterval(() => {
+                updateDigitalClock();
+                updateCurrentDate();
+                
+                // Update prayer status and countdown
+                if (currentPrayerData) {
+                    findNextPrayer(currentPrayerData);
+                    renderPrayerCards(currentPrayerData); // Re-render to update current prayer status
+                    checkPrayerNotifications(currentPrayerData); // Check for notifications
+                }
+            }, 1000);
+            
+            // Update prayer data every 5 minutes
+            dataUpdateInterval = setInterval(async () => {
+                await loadPrayerData();
+            }, 5 * 60 * 1000);
+        }
+
+        function stopRealTimeUpdates() {
+            if (realTimeInterval) {
+                clearInterval(realTimeInterval);
+                realTimeInterval = null;
+            }
+            if (dataUpdateInterval) {
+                clearInterval(dataUpdateInterval);
+                dataUpdateInterval = null;
+            }
+        }
+
+        // Initialize the app
+        async function init() {
+            updateDigitalClock();
+            updateCurrentDate();
+            await loadPrayerData();
+            startRealTimeUpdates();
+            
+            // Show welcome notification
+            setTimeout(() => {
+                createToast('info', '🕌 Selamat Datang', 'Aplikasi jadwal sholat dengan notifikasi real-time siap digunakan!', 4000);
+            }, 1000);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopRealTimeUpdates();
+        });
+
+        // Start the application
+        init();
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97fdc08c46888beb',t:'MTc1Nzk5ODMyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
