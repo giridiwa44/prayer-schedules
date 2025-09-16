@@ -4,45 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jadwal Sholat Real-time dengan Notifikasi</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        islamic: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e'
-                        }
-                    },
-                    animation: {
-                        'slide-in-right': 'slide-in-right 0.3s ease-out',
-                        'slide-out-right': 'slide-out-right 0.3s ease-in',
-                        'bounce-gentle': 'bounce-gentle 2s infinite'
-                    },
-                    keyframes: {
-                        'slide-in-right': {
-                            '0%': { transform: 'translateX(100%)', opacity: '0' },
-                            '100%': { transform: 'translateX(0)', opacity: '1' }
-                        },
-                        'slide-out-right': {
-                            '0%': { transform: 'translateX(0)', opacity: '1' },
-                            '100%': { transform: 'translateX(100%)', opacity: '0' }
-                        },
-                        'bounce-gentle': {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-5px)' }
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="dist/output.css">
 </head>
 <body class="bg-gradient-to-br from-islamic-50 to-blue-100 min-h-screen">
     <!-- Toast Container -->
@@ -233,6 +195,14 @@
             isya: { name: 'Isya', desc: 'Malam', color: 'blue', icon: '🌃' }
         };
 
+         // 🔹 Mapping warna → Tailwind classes
+        const tailwindColors = {
+            red:    { border: 'border-red-400', ring: 'ring-red-400', text: 'text-red-600', bg: 'bg-red-50', dot: 'bg-red-500', badge: 'bg-red-100 text-red-600' },
+            yellow: { border: 'border-yellow-400', ring: 'ring-yellow-400', text: 'text-yellow-600', bg: 'bg-yellow-50', dot: 'bg-yellow-500', badge: 'bg-yellow-100 text-yellow-600' },
+            orange: { border: 'border-orange-400', ring: 'ring-orange-400', text: 'text-orange-600', bg: 'bg-orange-50', dot: 'bg-orange-500', badge: 'bg-orange-100 text-orange-600' },
+            purple: { border: 'border-purple-400', ring: 'ring-purple-400', text: 'text-purple-600', bg: 'bg-purple-50', dot: 'bg-purple-500', badge: 'bg-purple-100 text-purple-600' },
+            blue:   { border: 'border-blue-400', ring: 'ring-blue-400', text: 'text-blue-600', bg: 'bg-blue-50', dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-600' }
+        };
         // Toast Notification System
         function createToast(type, title, message, duration = 5000) {
             const toastContainer = document.getElementById('toastContainer');
@@ -426,39 +396,46 @@
         }
 
         function renderPrayerCards(jadwal) {
-            const grid = document.getElementById('prayerGrid');
-            grid.innerHTML = '';
+        const grid = document.getElementById('prayerGrid');
+        grid.innerHTML = '';
 
-            Object.entries(prayerConfig).forEach(([key, config]) => {
-                const time = jadwal[key] || '--:--';
-                const timeWithSeconds = formatTimeWithSeconds(time);
-                const isCurrentPrayer = isCurrentlyPrayerTime(time);
-                const isUpcoming = isUpcomingPrayer(time);
-                
-                const card = document.createElement('div');
-                card.className = `prayer-card bg-white rounded-xl shadow-lg p-6 border-l-4 border-${config.color}-400 hover:shadow-xl transition-all duration-300 ${isCurrentPrayer ? 'ring-2 ring-' + config.color + '-400 bg-' + config.color + '-50 animate-bounce-gentle' : ''} ${isUpcoming ? 'ring-1 ring-' + config.color + '-300' : ''}`;
-                
-                card.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-gray-800 flex items-center">
-                                ${config.icon} ${config.name}
-                                ${isCurrentPrayer ? '<span class="ml-2 w-2 h-2 bg-' + config.color + '-500 rounded-full animate-pulse"></span>' : ''}
-                                ${isUpcoming ? '<span class="ml-2 text-xs bg-' + config.color + '-100 text-' + config.color + '-600 px-2 py-1 rounded-full">Selanjutnya</span>' : ''}
-                            </h3>
-                            <p class="text-gray-600">${config.desc}</p>
-                            ${isCurrentPrayer ? '<p class="text-xs text-' + config.color + '-600 font-semibold mt-1">⏰ WAKTU SHOLAT</p>' : ''}
-                        </div>
-                        <div class="text-right">
-                            <div class="text-2xl font-mono font-bold text-${config.color}-600">${timeWithSeconds}</div>
-                            <div class="text-sm text-gray-500">WIB</div>
-                        </div>
+        Object.entries(prayerConfig).forEach(([key, config]) => {
+            const time = jadwal[key] || '--:--';
+            const timeWithSeconds = formatTimeWithSeconds(time);
+            const isCurrentPrayer = isCurrentlyPrayerTime(time);
+            const isUpcoming = isUpcomingPrayer(time);
+
+            const c = tailwindColors[config.color]; // ambil mapping warna
+
+            const card = document.createElement('div');
+            card.className = `
+                prayer-card bg-white rounded-xl shadow-lg p-6 border-l-4 
+                ${c.border} hover:shadow-xl transition-all duration-300
+                ${isCurrentPrayer ? `ring-2 ${c.ring} ${c.bg} animate-bounce-gentle` : ''}
+                ${isUpcoming ? `ring-1 ${c.ring}` : ''}
+            `;
+
+            card.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                            ${config.icon} ${config.name}
+                            ${isCurrentPrayer ? `<span class="ml-2 w-2 h-2 ${c.dot} rounded-full animate-pulse"></span>` : ''}
+                            ${isUpcoming ? `<span class="ml-2 text-xs ${c.badge} px-2 py-1 rounded-full">Selanjutnya</span>` : ''}
+                        </h3>
+                        <p class="text-gray-600">${config.desc}</p>
+                        ${isCurrentPrayer ? `<p class="text-xs ${c.text} font-semibold mt-1">⏰ WAKTU SHOLAT</p>` : ''}
                     </div>
-                `;
-                
-                grid.appendChild(card);
-            });
-        }
+                    <div class="text-right">
+                        <div class="text-2xl font-mono font-bold ${c.text}">${timeWithSeconds}</div>
+                        <div class="text-sm text-gray-500">WIB</div>
+                    </div>
+                </div>
+            `;
+
+            grid.appendChild(card);
+        });
+    }
 
         function isCurrentlyPrayerTime(prayerTime) {
             if (!prayerTime || prayerTime === '--:--') return false;
