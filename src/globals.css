@@ -9,6 +9,9 @@
   --color-islamic-800: #075985;
   --color-islamic-900: #0c4a6e;
 
+  --font-sans:"Sawarabi Gothic", sans-serif;
+  --font-mono:"Zalando Sans", sans-serif;
+  
   @keyframes slide-in-right {
     0%   { transform: translateX(100%); opacity: 0 }
     100% { transform: translateX(0); opacity: 1 }
