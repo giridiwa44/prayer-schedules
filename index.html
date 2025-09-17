@@ -91,15 +91,15 @@
                          cities: [
                             { id: '1107', name: 'Kota Tangerang' },
                             { id: '1301', name: 'Jakarta' },
-                            { id: '1273', name: 'Surabaya' },
-                            { id: '1204', name: 'Bandung' },
-                            { id: '1214', name: 'Medan' },
-                            { id: '1226', name: 'Semarang' },
+                            { id: '1638', name: 'Surabaya' },
+                            { id: '1201', name: 'Bandung' },
+                            { id: '0228', name: 'Medan' },
+                            { id: '1433', name: 'Semarang' },
                             { id: '1271', name: 'Makassar' },
                             { id: '1219', name: 'Palembang' },
-                            { id: '1205', name: 'Yogyakarta' },
-                            { id: '1275', name: 'Denpasar' },
-                            { id: '1265', name: 'Balikpapan' }
+                            { id: '1505', name: 'Yogyakarta' },
+                            { id: '1633', name: 'Kota Madiun' },
+                            { id: '1612', name: 'Kabupaten Madiun' }
                         ]
                         }" class="relative w-full">
 
@@ -211,18 +211,18 @@
             '1107': 'Kota Tangerang, Banten',
             '1108': 'Kota Tangerang Selatan, Banten',
             '1203': 'Kab.Bekasi, Jawa Barat',
-            '1204': 'Bandung, Jawa Barat',
-            '1205': 'Yogyakarta, DIY',
+            '1201': 'Bandung, Jawa Barat',
+            '1505': 'Yogyakarta, DIY',
             '1301': 'Jakarta, Indonesia',
-            '1273': 'Surabaya, Jawa Timur',
+            '1638': 'Surabaya, Jawa Timur',
             '1204': 'Bandung, Jawa Barat',
-            '1214': 'Medan, Sumatera Utara',
-            '1226': 'Semarang, Jawa Tengah',
+            '0228': 'Medan, Sumatera Utara',
+            '1433': 'Semarang, Jawa Tengah',
             '1271': 'Makassar, Sulawesi Selatan',
             '1219': 'Palembang, Sumatera Selatan',
             '1205': 'Yogyakarta, DIY',
-            '1275': 'Denpasar, Bali',
-            '1265': 'Balikpapan, Kalimantan Timur'
+            '1633': 'Kota Madiun, Jawa Timur',
+            '1612': 'Kab Madiun, Jawa Timur'
         };
 
         let currentCityId = '1301'; // Default Jakarta
@@ -712,6 +712,12 @@
         init();
     </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
+    <script>
+    if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(() => console.log("Service Worker terdaftar"))
+      .catch(err => console.error("SW gagal:", err));
+    }
+    </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97fdc08c46888beb',t:'MTc1Nzk5ODMyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
