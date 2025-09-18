@@ -1,7 +1,7 @@
 {
     "name":"Aplikasi Jadwal Sholat",
     "short_name":"Prayer App",
-    "start_url":"/index.html",
+    "start_url":"/",
     "display": "standalone",
     "background_color": "#ffffff",
      "theme_color": "#075985",
