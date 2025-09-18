@@ -29,6 +29,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
+  // 👉 skip kalau bukan GET atau bukan http/https
+  if (req.method !== "GET" || !req.url.startsWith("http")) {
+    return;
+  }
+
   // Kalau navigasi (HTML), pakai network first biar gak ke-lock
   if (req.mode === "navigate") {
     event.respondWith(
