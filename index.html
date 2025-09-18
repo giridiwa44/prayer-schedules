@@ -86,24 +86,7 @@
                 <div class="relative w-full">
 
                     <!-- Dropdown Kota dengan AlpineJS -->
-                    <div x-data="{
-                         open: false,
-                         selectedId: '1107',
-                         selectedName: 'Kota Tangerang',
-                         cities: [
-                            { id: '1107', name: 'Kota Tangerang' },
-                            { id: '1301', name: 'Jakarta' },
-                            { id: '1638', name: 'Surabaya' },
-                            { id: '1201', name: 'Bandung' },
-                            { id: '0228', name: 'Medan' },
-                            { id: '1433', name: 'Semarang' },
-                            { id: '1271', name: 'Makassar' },
-                            { id: '1219', name: 'Palembang' },
-                            { id: '1505', name: 'Yogyakarta' },
-                            { id: '1633', name: 'Kota Madiun' },
-                            { id: '1612', name: 'Kabupaten Madiun' }
-                        ]
-                        }" class="relative w-full">
+                    <div x-data="cityDropdown()" x-init="init()" class="relative w-full">
 
                         <!-- Hidden input untuk submit ke form -->
                         <input type="hidden"  id="citySelect" name="city_id" :value="selectedId">
@@ -132,7 +115,7 @@
                     >
                         <template x-for="city in cities" :key="city.id">
                         <li 
-                            @click="selectedId = city.id; selectedName = city.name; open = false" 
+                            @click="selectCity(city)"
                             class="px-4 py-2 cursor-pointer hover:bg-gray-100"
                             x-text="city.name"
                         ></li>
@@ -180,6 +163,11 @@
             <div class="bg-white rounded-xl shadow-lg p-6">
                 <h3 class="text-xl font-bold text-gray-800 mb-4">Informasi Tambahan</h3>
                 <div class="space-y-2">
+                    
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Imsak :</span>
+                        <span class="font-mono font-semibold" id="imsak">--:--:--</span>  
+                    </div>
                     <div class="flex justify-between">
                         <span class="text-gray-600">Terbit:</span>
                         <span class="font-mono font-semibold" id="sunrise">--:--:--</span>
@@ -196,15 +184,111 @@
                         <span class="text-gray-600">Last Update:</span>
                         <span class="font-mono text-sm text-green-600" id="lastUpdate">--:--:--</span>
                     </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-700" id="eventName"></span>
+                        <span class="font-mono font-semibold" id="countdown"></span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    <!-- Alphine JS List Style -->
+     <script>
+    function cityDropdown() {
+    return {
+        open: false,
+        selectedId: '1107',
+        selectedName: 'Kota Tangerang',
+        cities: [
+            { id: '1107', name: 'Kota Tangerang' },
+            { id: '1301', name: 'Jakarta' },
+            { id: '1638', name: 'Surabaya' },
+            { id: '1201', name: 'Bandung' },
+            { id: '0228', name: 'Medan' },
+            { id: '1433', name: 'Semarang' },
+            { id: '1271', name: 'Makassar' },
+            { id: '1219', name: 'Palembang' },
+            { id: '1505', name: 'Yogyakarta' },
+            { id: '1633', name: 'Kota Madiun' },
+            { id: '1612', name: 'Kabupaten Madiun' }
+        ],
+        init() {
+        // cek kalau ada data di localStorage
+            const savedCity = JSON.parse(localStorage.getItem('selectedCity'));
+            if (savedCity) {
+                this.selectedId = savedCity.id;
+                this.selectedName = savedCity.name;
+            }
+        },
+        selectCity(city) {
+            this.selectedId = city.id;
+            this.selectedName = city.name;
+            this.open = false;
+            // simpan ke localStorage
+            localStorage.setItem('selectedCity', JSON.stringify(city));
+        }
+    }
+    }
+    </script>
+    <!-- Countdown Event -->
+    <script>
+        const events = [
+            { name: "Tahun Baru 2026", date: "2026-01-01T00:00:00" },
+            { name: "Isra Mi'raj 1447 H", date: "2026-01-16T00:00:00" },
+            { name: "Ramadhan 1447 H", date: "2026-02-18T00:00:00" },
+            { name: "Idul Fitri 1447 H", date: "2026-03-19T00:00:00" },
+            { name: "Idul Adha 1447 H", date: "2026-05-26T00:00:00" },
+            { name: "1 Muharram 1448 H", date: "2026-07-07T00:00:00" },
+            { name: "Maulid Nabi 1448 H", date: "2026-08-25T00:00:00" },
+            { name: "Hari Kemerdekaan RI", date: "2026-08-17T00:00:00" },
+        ];
+
+        function getNextEvent(){
+            const now = new Date().getTime();
+            return events.find(ev => new Date(ev.date).getTime() > now);
+        }
+
+        function startCountdown(event) {
+            const eventNameEl = document.getElementById("eventName");
+            const countdownEl = document.getElementById("countdown");
+
+            eventNameEl.textContent = `Menuju ${event.name}`;
+
+            const timer = setInterval(() => {
+                const now = new Date().getTime();
+                const distance = new Date(event.date).getTime() - now;
+
+                if (distance <= 0) {
+                    clearInterval(timer);
+                    countdownEl.textContent = `${event.name} sudah dimulai 🎉`;
+                    // Otomatis lanjut ke event berikutnya
+                    const next = getNextEvent();
+                    if (next) startCountdown(next);
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                countdownEl.textContent = `${days} hari ${hours} jam ${minutes} menit ${seconds} detik`;
+            }, 1000);
+        }
+
+        // Mulai dari event terdekat
+        const nextEvent = getNextEvent();
+        if (nextEvent) startCountdown(nextEvent);
+        else document.getElementById("countdown").textContent = "Tidak ada event berikutnya 🎊";
+    </script>
+    <!-- Countdown Event End -->
+    <!-- PWA -->
     <script>
     window.addEventListener("beforeInstallPrompt", (e) => {
         console.log("Successed Installing App");
     });
     </script>
+    <!-- PWA Settings -->
     <script>
         // City mapping for MyQuran API
         const cityNames = {
@@ -590,6 +674,7 @@
         }
 
         function updateAdditionalInfo(jadwal) {
+            document.getElementById('imsak').textContent = formatTimeWithSeconds(jadwal.imsak || '--:--');
             document.getElementById('sunrise').textContent = formatTimeWithSeconds(jadwal.terbit || '--:--');
             document.getElementById('dhuha').textContent = formatTimeWithSeconds(jadwal.dhuha || '--:--');
             document.getElementById('midnight').textContent = formatTimeWithSeconds(jadwal.tengah_malam || '--:--');
