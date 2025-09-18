@@ -200,24 +200,10 @@
             </div>
         </div>
     </div>
-    <button id="installBtn" style="display:none">Install App</button>
     <script>
-  let deferredPrompt;
-  const installBtn = document.getElementById('installBtn');
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); // cegah auto-popup
-    deferredPrompt = e;
-    installBtn.style.display = 'block'; // munculin tombol
-  });
-
-  installBtn.addEventListener('click', async () => {
-    installBtn.style.display = 'none';
-    deferredPrompt.prompt(); // munculin dialog install
-    const choice = await deferredPrompt.userChoice;
-    console.log('User choice:', choice.outcome);
-    deferredPrompt = null;
-  });
+    window.addEventListener("beforeInstallPrompt", (e) => {
+        console.log("Successed Installing App");
+    });
     </script>
     <script>
         // City mapping for MyQuran API
