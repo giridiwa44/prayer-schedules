@@ -153,7 +153,7 @@
         <!-- Islamic Calendar & Additional Info -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white rounded-xl shadow-lg p-6">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">Kalender Hijriah</h3>
+                <h3 class="text-xl font-bold text-gray-800 mb-4">📅 Kalender Hijriah</h3>
                 <div class="text-center">
                     <div class="text-2xl font-bold text-islamic-600 mb-2" id="hijriDate">-</div>
                     <div class="text-gray-600" id="hijriMonth">Memuat...</div>
@@ -192,6 +192,103 @@
             </div>
         </div>
     </div>
+    <!-- Modal Toggle -->
+     <!-- Modal -->
+    <div id="confirmModal" 
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300">
+  <!-- Konten modal -->
+  <div id="confirmContent"
+       class="bg-white rounded-2xl shadow-lg w-80 p-6 text-center space-y-4 transform scale-95 opacity-0 transition-all duration-300">
+    <h2 class="text-lg font-semibold">Matikan Notifikasi?</h2>
+    <p class="text-gray-600 text-sm">Apakah kamu yakin ingin menonaktifkan notifikasi ini?</p>
+    <div class="flex justify-center gap-3 mx-3 mt-4">
+      <button id="cancelBtn" 
+              class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300">
+        Batal
+      </button>
+      <button id="confirmBtn" 
+              class="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600">
+        Matikan
+      </button>
+    </div>
+  </div>
+</div>
+    <!-- Intercept Toggle -->
+    <script>
+let targetCheckbox = null;
+
+const modal = document.getElementById("confirmModal");
+const content = document.getElementById("confirmContent");
+
+// 👉 show modal dengan animasi
+function showModal() {
+  modal.classList.remove("hidden");      // tampilkan
+  modal.classList.add("flex");           // aktif flex
+  void modal.offsetWidth;                // trigger reflow
+  modal.classList.add("opacity-100");
+  content.classList.remove("scale-95", "opacity-0");
+  content.classList.add("scale-100", "opacity-100");
+}
+
+// 👉 hide modal dengan animasi
+function hideModal() {
+  modal.classList.remove("opacity-100");
+  content.classList.remove("scale-100", "opacity-100");
+  content.classList.add("scale-95", "opacity-0");
+
+  setTimeout(() => {
+    modal.classList.add("hidden");
+    modal.classList.remove("flex"); // ✅ typo fix
+  }, 300); // sesuai durasi transition
+  targetCheckbox = null;
+}
+
+// 👉 attach toggle ke modal
+function attachToggleWithModal(id) {
+  const checkbox = document.getElementById(id);
+  checkbox.addEventListener("change", (e) => {
+    if (!checkbox.checked) {
+      targetCheckbox = checkbox;
+      e.preventDefault();
+      checkbox.checked = true; // balik ke ON sampai user confirm
+      showModal();
+    }
+  });
+}
+
+// Pasang ke toggle
+attachToggleWithModal("notification10min");
+attachToggleWithModal("notificationNow");
+
+// Tombol modal
+document.getElementById("cancelBtn").addEventListener("click", () => {
+  if (targetCheckbox) targetCheckbox.checked = true; // pastikan tetap ON
+  hideModal();
+});
+
+document.getElementById("confirmBtn").addEventListener("click", () => {
+  if (targetCheckbox) targetCheckbox.checked = false; // baru OFF
+  hideModal();
+});
+
+// Klik overlay juga nutup modal
+modal.addEventListener("click", (e) => {
+  if (e.target === modal) {
+    if (targetCheckbox) targetCheckbox.checked = true;
+    hideModal();
+  }
+});
+
+// Reset state kalau reload
+document.addEventListener("DOMContentLoaded", () => {
+  modal.classList.add("hidden");
+  modal.classList.remove("flex", "opacity-100");
+  content.classList.remove("scale-100", "opacity-100");
+  content.classList.add("scale-95", "opacity-0");
+});
+
+
+</script>
     <!-- Alphine JS List Style -->
      <script>
     function cityDropdown() {
@@ -695,7 +792,7 @@
                 if(result.status && result.data){
                     const hijriDate = result.data.date[1];
                     document.getElementById('hijriDate').textContent = hijriDate;
-                    document.getElementById('hijriMonth').textContent = 'Kalender Hijriah';
+                    document.getElementById('hijriMonth').textContent = '📆 Kalender Hijriah';
                 }
 
                 
