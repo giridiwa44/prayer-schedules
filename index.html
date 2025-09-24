@@ -193,7 +193,7 @@
         </div>
     </div>
     <!-- Modal Toggle -->
-     <!-- Modal -->
+    <!-- Modal -->
     <div id="confirmModal" 
      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 transition-opacity duration-300">
   <!-- Konten modal -->
@@ -213,8 +213,78 @@
     </div>
   </div>
 </div>
-    <!-- Intercept Toggle -->
-    <script>
+<!-- Propmt Install PWA -->
+<div x-data="pwaInstallToast()" 
+     x-show="visible"
+     x-transition:enter="transform transition ease-out duration-500"
+     x-transition:enter-start="translate-x-full opacity-0"
+     x-transition:enter-end="translate-x-0 opacity-100"
+     x-transition:leave="transform transition ease-in duration-500"
+     x-transition:leave-start="translate-x-0 opacity-100"
+     x-transition:leave-end="translate-x-full opacity-0"
+     class="fixed bottom-5 right-5 bg-white border border-gray-200 shadow-lg rounded-lg p-4 flex items-center space-x-3 z-50"
+     style="display:none">
+
+  <span class="text-gray-800 font-medium">Install aplikasi ini?</span>
+
+  <button @click="installApp"
+          class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700">
+    Install
+  </button>
+
+  <button @click="dismiss"
+          class="px-3 py-1 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">
+    Nanti
+  </button>
+</div>
+<!-- Install PWA -->
+<script>
+function pwaInstallToast(){
+    return{
+        visible: false,
+        defferedPrompt: null,
+        timeout: null,
+
+        init(){
+            window.addEventListener('beforeinstallprompt', (e) => {
+                console.log("Welcome to PWA !, Click Install On Native Form to Install Application In Your Phone, Thanks !")
+                this.defferedPrompt = e;
+
+                this.visible = true;
+
+                this.timeout = setTimeout(() => {
+                    this.visible = false;
+                }, 10000);
+            });
+
+            window.addEventListener("appinstalled", () => {
+                console.log("PWA Berhasil Di Install");
+                this.visible = false;
+                clearTimeout(this.timeout);
+            });
+        },
+
+        async installApp(){
+            if(this.defferedPrompt){
+                this.defferedPrompt.prompt();
+                const { outcome } = await this.defferedPrompt.userChoice;
+                console.log("user install", outcome);
+
+                this.defferedPrompt = null;
+                this.visible = false;
+                clearTimeout(this.timeout);
+            }
+        },
+
+        dismiss(){
+            this.visible = false;
+            clearTimeout(this.timeout);
+        }
+    }
+}
+</script>
+<!-- Intercept Toggle -->
+<script>
 let targetCheckbox = null;
 
 const modal = document.getElementById("confirmModal");
@@ -810,7 +880,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             // Clear notification history when changing location
             notificationHistory.clear();
-            
+            localStorage.setItem('Kota Terpilih :', cityNames[currentCityId]);
             await loadPrayerData();
         }
 
