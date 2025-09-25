@@ -237,6 +237,15 @@
     Nanti
   </button>
 </div>
+<script>
+  const originalError = console.error;
+  console.error = function (...args) {
+    if (args.some(arg => typeof arg === "string" && arg.includes("/cdn-cgi/"))) {
+      return; // skip error dari cdn-cgi
+    }
+    originalError.apply(console, args);
+  };
+</script>
 <!-- Install PWA -->
 <script>
 function pwaInstallToast(){
@@ -969,7 +978,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Start the application
         init();
     </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script>
     if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
